@@ -1,93 +1,119 @@
-TinyML Depthwise CNN Gesture Classifier on Arduino Nano 33 BLE
+# TinyML Gesture Classification on Arduino Nano 33 BLE
 
-An embedded TinyML project for real-time gesture classification on the Arduino Nano 33 BLE using IMU data and a quantized INT8 Depthwise Convolutional Neural Network (CNN) deployed with TensorFlow Lite Micro.
+Real-time IMU gesture classification on the Arduino Nano 33 BLE using an INT8 Depthwise CNN and TensorFlow Lite for Microcontrollers.
 
-The project is currently in the deployment and low-level debugging phase. The trained model has been successfully converted to a TensorFlow Lite model and embedded into the Arduino firmware. The current investigation focuses on the TensorFlow Lite Micro tensor allocation stage on the target microcontroller.
+This project investigates the complete deployment pipeline of a quantized neural network on a resource-constrained microcontroller, including IMU acquisition, preprocessing, INT8 inference, memory debugging, TensorFlow Lite Micro integration, and embedded model alignment.
 
-Project Overview
+---
 
-The goal of this project is to deploy a lightweight neural network for gesture recognition directly on a microcontroller.
+## Project Overview
 
-The intended inference pipeline is:
+The goal of this project is to deploy a lightweight gesture-classification neural network directly on an:
 
-IMU
- ↓
+```text
+Arduino Nano 33 BLE
+```
+
+The intended final pipeline is:
+
+```text
+Arduino Nano 33 BLE IMU
+        ↓
 Motion Detection
- ↓
-Gesture Capture
- ↓
-Preprocessing / Scaling
- ↓
+        ↓
+128 × 6 IMU Window
+        ↓
+Raw Feature Scaling
+        ↓
 INT8 Quantization
- ↓
+        ↓
 Depthwise CNN
- ↓
+        ↓
 TensorFlow Lite Micro
- ↓
-Gesture Probabilities
- ↓
-Predicted Gesture
+        ↓
+4-Class Output
+        ↓
+Gesture + Confidence
+```
 
-The final system is intended to perform the complete classification pipeline locally on the Arduino Nano 33 BLE without requiring cloud inference or a connected computer.
+The model processes six IMU channels over a window of 128 samples:
 
-Hardware
+```text
+Input shape: 1 × 128 × 6
+```
+
+and produces four output probabilities:
+
+```text
+Output shape: 1 × 4
+```
+
+---
+
+# Hardware
 
 Target board:
 
+```text
 Arduino Nano 33 BLE
+```
 
-ARM Cortex-M4F
+The board provides:
 
-On-board IMU
+- ARM Cortex-M4F microcontroller
+- 1 MB Flash
+- 256 KB SRAM
+- On-board IMU
+- USB serial interface
 
-256 KB SRAM
+The project is designed to perform inference entirely on-device without requiring a PC or cloud service during classification.
 
-1 MB Flash
+---
 
-Development is currently performed through the Arduino IDE using USB serial communication for diagnostics.
+# Software Stack
 
-Software Environment
+Development and deployment use:
 
-Current development environment:
+```text
+Arduino IDE 2.3.8
+Arduino Nano 33 BLE
+TensorFlow Lite for Microcontrollers
+INT8 quantized CNN
+C / C++
+```
 
-Arduino IDE: 2.3.8
-Target: Arduino Nano 33 BLE
-Serial baud rate: 115200
+The primary project files are:
 
-TensorFlow Lite Micro is integrated through:
+```text
+Depthwise_Gesture_Classifier.ino
+depthwise_model.h
+raw_scaler.h
+```
 
-#include <Chirale_TensorFlowLite.h>
+---
 
-with the required TensorFlow Lite Micro headers.
+# Neural Network
 
-Neural Network
+The deployed model is an INT8 quantized Depthwise CNN.
 
-The deployed model is a quantized:
+Embedded model size:
 
-Depthwise CNN
-INT8
-
-Current embedded model size:
-
+```text
 10,368 bytes
+```
 
-The model uses TensorFlow Lite schema version:
+TensorFlow Lite schema:
 
+```text
 Model schema version:   3
 Runtime schema version: 3
+```
 
-Therefore, no model/runtime schema mismatch has been observed.
+The model uses eight operator codes.
 
-TensorFlow Lite Operators
+The required TensorFlow Lite Micro operators were identified as:
 
-Inspection of the embedded model showed that it requires eight TensorFlow Lite operators.
-
-The current resolver contains:
-
-tflite::MicroMutableOpResolver<8>
-
-with:
-
+```text
 ExpandDims
 DepthwiseConv2D
 Conv2D
@@ -96,232 +122,156 @@ MaxPool2D
 Mean
 FullyConnected
 Softmax
+```
 
-The corresponding model operator codes observed during diagnostics were:
+These operators are registered explicitly using a `MicroMutableOpResolver`.
 
-Opcode 0: builtin=70, version=1
-Opcode 1: builtin=4,  version=3
-Opcode 2: builtin=3,  version=3
-Opcode 3: builtin=22, version=1
-Opcode 4: builtin=17, version=2
-Opcode 5: builtin=40, version=2
-Opcode 6: builtin=9,  version=4
-Opcode 7: builtin=25, version=2
+---
 
-All required operators can be successfully registered in the MicroMutableOpResolver.
+# Input Tensor
 
-Tensor Arena
+The model input tensor has:
 
-The current diagnostic configuration uses a 64 KB tensor arena:
+```text
+Type: INT8
+Dimensions: 1 × 128 × 6
+Elements: 768
+Bytes: 768
 
-constexpr int TENSOR_ARENA_SIZE = 64 * 1024;
+Scale:      0.04553470
+Zero point: 13
+```
 
-alignas(16)
-static uint8_t tensorArena[TENSOR_ARENA_SIZE];
+Therefore, one inference window contains:
 
-Arena capacity:
+```text
+128 samples × 6 IMU channels
+```
 
-65,536 bytes
+---
 
-Explicit alignment is used to eliminate obvious tensor-arena alignment problems during testing.
+# Output Tensor
 
-Original Runtime Architecture
+The output tensor has:
 
-The intended full firmware contains several major components.
+```text
+Type: INT8
+Dimensions: 1 × 4
+Elements: 4
+Bytes: 4
 
-1. IMU acquisition
+Scale:      0.00390625
+Zero point: -128
+```
 
-The Arduino's IMU provides motion data used to capture gestures.
+The four values correspond to the four gesture classes.
 
-2. Motion detection
+---
 
-A configurable motion threshold determines when a gesture capture should begin.
+# Raw Feature Scaling
 
-A diagnostic configuration used:
+The project includes:
 
-Motion threshold: 0.2000
-
-3. Sample buffer
-
-Captured IMU samples are stored before preprocessing.
-
-One observed configuration reported:
-
-Sample buffer bytes: 3072
-
-4. Raw scaler
-
-Training-time scaling parameters are embedded into the firmware through:
-
+```text
 raw_scaler.h
+```
 
-These parameters are intended to reproduce the preprocessing used during model training.
+containing the preprocessing statistics used during training.
 
-5. INT8 quantization
+Observed values:
 
-Preprocessed samples are converted into the quantized representation expected by the TensorFlow Lite model.
+```text
+Axis 0 mean = -0.00392063    std = 0.25857764
+Axis 1 mean = -0.09010717    std = 0.60423815
+Axis 2 mean = -0.13027927    std = 0.75048846
+Axis 3 mean = -1.59155166    std = 18.72109604
+Axis 4 mean =  0.14677145    std = 17.97825241
+Axis 5 mean = -0.04352759    std = 56.13960266
+```
 
-6. TensorFlow Lite Micro inference
+These statistics will eventually be used in the live preprocessing pipeline before INT8 quantization.
 
-The intended inference sequence is:
+---
 
-GetModel()
-     ↓
-Create Resolver
-     ↓
-Create MicroInterpreter
-     ↓
-AllocateTensors()
-     ↓
-Get Input Tensor
-     ↓
-Fill Input
-     ↓
-Invoke()
-     ↓
-Read Output
+# Tensor Arena
 
-Project Files
+A 64 KB TensorFlow Lite Micro tensor arena was used during debugging:
 
-The current Arduino project contains the following important files:
+```cpp
+constexpr size_t kTensorArenaSize = 64 * 1024;
+```
 
-Depthwise_Gesture_Classifier.ino
-raw_scaler.h
-depthwise_model.h
+The arena was explicitly aligned.
 
-Depthwise_Gesture_Classifier.ino
+During the successful controlled test, TensorFlow Lite Micro reported approximately:
 
-Main firmware and diagnostic program.
+```text
+Arena capacity: 65536 bytes
+Arena used:      6852 bytes
+```
 
-Depending on the debugging stage, this file contains either the complete live gesture-classification pipeline or a stripped TensorFlow Lite Micro diagnostic test.
+Therefore, the previous `AllocateTensors()` failure was **not caused by an undersized tensor arena**.
 
-raw_scaler.h
+---
 
-Contains preprocessing/scaling parameters used by the original classifier.
+# Debugging Background
 
-This dependency has also been deliberately removed in controlled tests to determine whether it contributes to the current runtime failure.
+During integration of the complete classifier, execution repeatedly stopped during:
 
-depthwise_model.h
-
-Contains the embedded TensorFlow Lite INT8 model as a C/C++ byte array.
-
-Current model size:
-
-10,368 bytes
-
-Current Debugging Investigation
-
-During integration of the complete live classifier, execution repeatedly stopped during:
-
+```cpp
 interpreter.AllocateTensors();
+```
 
-To locate the failure precisely, extensive serial checkpoints were added.
+The failure was difficult to diagnose because:
 
-For example:
+- the sketch compiled successfully,
+- the model schema was valid,
+- all required operators were registered,
+- the interpreter constructor completed,
+- the board had sufficient RAM,
+- and no ordinary TensorFlow Lite error was returned.
 
-[D1] Loading model
-[D2] GetModel returned
-[D3] Schema OK
+Instead, execution could stop inside `AllocateTensors()`.
 
-[R0] Creating resolver
-...
-[R9] Resolver ready
+A controlled stripping strategy was therefore used.
 
-[I1] Creating interpreter
-[I2] Interpreter created
+---
 
-[A1] ENTER AllocateTensors()
+# Controlled Stripping Method
 
-The critical observation was that execution reached:
+The application was progressively reduced until only the TensorFlow Lite Micro runtime remained.
 
-[A1] ENTER AllocateTensors()
+The debugging procedure was:
 
-but did not reach the checkpoint immediately after AllocateTensors().
+```text
+Full application
+      ↓
+Remove IMU
+      ↓
+Remove live capture
+      ↓
+Remove preprocessing
+      ↓
+Remove sample buffers
+      ↓
+Remove classifier globals
+      ↓
+Test minimal TFLM runtime
+      ↓
+Reintroduce dependencies one by one
+```
 
-This strongly localizes the current failure to execution occurring during tensor allocation.
+This allowed each subsystem to be tested independently.
 
-Controlled Stripping Tests
+---
 
-Rather than changing multiple components simultaneously, the firmware has been progressively stripped down to isolate the failing subsystem.
+# Controlled Stripping Test 3
 
-Controlled Stripping Test 1
+Test 3 was an absolute-minimal TensorFlow Lite Micro test.
 
-The first stripped configuration removed major parts of the live classification pipeline while retaining enough of the original application structure to test TensorFlow Lite initialization.
+It contained no:
 
-The model was successfully:
-
-located in memory,
-
-parsed,
-
-schema-validated,
-
-registered with the required operators,
-
-passed to the interpreter.
-
-Execution nevertheless stopped during:
-
-AllocateTensors()
-
-This suggested that the failure was not simply occurring during model loading or resolver construction.
-
-Controlled Stripping Test 2
-
-The second test removed additional classifier-specific dependencies.
-
-The Serial Monitor explicitly confirmed:
-
-CONTROLLED STRIPPING TEST 2
-
-NO IMU dependency
-NO raw_scaler
-NO sampleBuffer
-NO live classifier globals
-
-The initialization sequence continued successfully through:
-
-[D1] Loading model
-[D2] GetModel returned
-[D3] Schema OK
-
-followed by successful operator registration:
-
-[R0] Creating resolver
-[R1] AddExpandDims
-[R2] AddDepthwiseConv2D
-[R3] AddConv2D
-[R4] AddReshape
-[R5] AddMaxPool2D
-[R6] AddMean
-[R7] AddFullyConnected
-[R8] AddSoftmax
-[R9] Resolver ready
-
-and successful interpreter construction:
-
-[I1] Creating interpreter
-[I2] Interpreter created
-
-The final observed checkpoint was again:
-
-[A1] ENTER AllocateTensors()
-
-Therefore, removing the following components did not eliminate the problem:
-
-IMU dependency
-raw_scaler
-sampleBuffer
-live classifier globals
-
-This significantly narrowed the investigation.
-
-Controlled Stripping Test 3
-
-Controlled Stripping Test 3 reduced the firmware to an absolute-minimal TensorFlow Lite Micro runtime.
-
-The firmware contained no:
-
+```text
 IMU
 raw_scaler
 sampleBuffer
@@ -329,249 +279,444 @@ motion detection
 gesture capture
 preprocessing
 live classifier logic
-classifier-specific global state
+```
 
-The test performed only:
+The test performed:
 
-Serial
-  ↓
+```text
 GetModel()
-  ↓
+    ↓
 Schema validation
-  ↓
-Create resolver
-  ↓
-Create MicroInterpreter
-  ↓
+    ↓
+Resolver creation
+    ↓
+MicroInterpreter construction
+    ↓
 AllocateTensors()
-  ↓
-Inspect tensors
-  ↓
-Fill deterministic INT8 input
-  ↓
+    ↓
+Input/output tensor inspection
+    ↓
+Deterministic INT8 input
+    ↓
 Invoke()
-  ↓
-Inspect output
+    ↓
+Output inspection
+```
 
-The input tensor was filled with its quantized zero point so that inference could be tested independently of the live IMU pipeline.
+The input tensor was filled with its quantized zero point:
 
-Test 3 Result
+```text
+13
+```
 
-Test 3 passed completely on the Arduino Nano 33 BLE.
+so that inference could be tested independently of real sensor data.
 
-Observed tensor allocation result:
+## Test 3 Result
 
+Tensor allocation succeeded:
+
+```text
 [A1] ENTER AllocateTensors()
 [A2] EXIT AllocateTensors()
+
 Allocate status: 0
+
 [A3] AllocateTensors SUCCESS
+```
 
-Observed input tensor:
+The tensors were correctly created:
 
-Type: 9
-Bytes: 768
-Scale: 0.04553470
-Zero point: 13
-Dimensions: 1 x 128 x 6
+```text
+Input:
+1 × 128 × 6
+768 bytes
 
-Observed output tensor:
-
-Type: 9
-Bytes: 4
-Scale: 0.00390625
-Zero point: -128
-Dimensions: 1 x 4
-
-Inference also completed successfully:
-
-[V1] ENTER Invoke()
-[V2] EXIT Invoke()
-Invoke status: 0
-[V3] Invoke SUCCESS
-
-The deterministic test input produced:
-
-Class 0: 0.07812500
-Class 1: 0.28125000
-Class 2: 0.51171875
-Class 3: 0.12890625
-
-The test concluded with:
-
-*** MINIMAL TFLM TEST PASSED ***
-
-This proved that the following components were functional together on the target board:
-
-depthwise_model.h
-TensorFlow Lite schema
-MicroMutableOpResolver
-MicroInterpreter
-64 KB tensor arena
-AllocateTensors()
-INT8 input/output tensors
-Invoke()
-
-This was the first decisive indication that the Depthwise CNN and TensorFlow Lite Micro runtime were not inherently broken.
-
-Controlled Stripping Test 4
-
-Test 4 started from the passing Test 3 baseline and added only:
-
-raw_scaler.h
-
-No IMU, sample buffer, preprocessing pipeline, or live classifier logic was restored.
-
-The scaler arrays were deliberately referenced at runtime so that they were definitely linked into the firmware.
-
-The scaler values were read successfully:
-
-[S1] ENTER raw_scaler test
-...
-[S2] raw_scaler reference SUCCESS
-
-The model was still parsed successfully, the schema matched, all eight operators were registered, and the interpreter constructor completed.
-
-However, execution again stopped at:
-
-[A1] ENTER AllocateTensors()
-
-with no corresponding:
-
-[A2] EXIT AllocateTensors()
-
-Test 4 Interpretation
-
-This result initially suggested that the presence of raw_scaler.h changed something important in the executable.
-
-However, the Arduino memory report did not show a meaningful increase in static RAM usage compared with Test 3.
-
-The scaler arrays also appeared at low memory addresses associated with program/constant storage rather than the main SRAM region.
-
-Therefore, the leading hypothesis shifted from "the scaler consumes too much RAM" to:
-
-Adding raw_scaler.h changes the binary layout and therefore changes the placement/alignment of the embedded TFLite model.
-
-This hypothesis was tested directly in Test 5.
-
-Controlled Stripping Test 5
-
-Test 5 kept raw_scaler.h present exactly as in Test 4, but copied the entire TFLite model into an explicitly 16-byte-aligned RAM buffer before calling GetModel().
-
-The test therefore compared:
-
-Original embedded model in program memory
-vs.
-16-byte-aligned RAM copy of the exact same model bytes
-
-The model copy was verified byte-for-byte before execution.
-
-Model Alignment Observation
-
-The original embedded model address was:
-
-Original model addr:  0x330A4
-Original model mod16: 4
-
-Therefore, the original FlatBuffer was not 16-byte aligned.
-
-The RAM copy was:
-
-Aligned model addr:   0x20011030
-Aligned model mod16:  0
-
-The tensor arena was also 16-byte aligned.
-
-Test 5 Result
-
-With raw_scaler.h still present and the model loaded from the aligned RAM copy, tensor allocation succeeded:
-
-[A1] ENTER AllocateTensors()
-[A2] EXIT AllocateTensors()
-Allocate status: 0
-[A3] AllocateTensors SUCCESS
-
-The actual arena usage was:
-
-Arena used: 6852
-
-out of:
-
-Arena capacity: 65536
-
-This strongly demonstrates that the failure was not caused by an undersized tensor arena.
-
-Input/output tensors were valid:
-
-Input bytes: 768
-Input scale: 0.04553470
-Input zero point: 13
-
-Output bytes: 4
-Output scale: 0.00390625
-Output zero point: -128
+Output:
+1 × 4
+4 bytes
+```
 
 Inference also succeeded:
 
+```text
 [V1] ENTER Invoke()
 [V2] EXIT Invoke()
+
 Invoke status: 0
+
 [V3] Invoke SUCCESS
+```
 
 Observed output:
 
+```text
 Class 0: 0.07812500
 Class 1: 0.28125000
 Class 2: 0.51171875
 Class 3: 0.12890625
+```
 
 The test concluded with:
 
-CONTROLLED STRIPPING TEST 5 PASSED
+```text
+*** MINIMAL TFLM TEST PASSED ***
+```
 
+This proved that the model and TensorFlow Lite Micro runtime were fundamentally functional on the Arduino Nano 33 BLE.
+
+---
+
+# Controlled Stripping Test 4
+
+Test 4 started from the successful Test 3 configuration and added only:
+
+```text
+raw_scaler.h
+```
+
+No IMU code, sample buffer, motion detector, or live classifier was restored.
+
+The scaler arrays were deliberately accessed at runtime.
+
+The scaler test succeeded:
+
+```text
+[S1] ENTER raw_scaler test
+
+...
+
+Scaler probe: 92.73963928
+
+[S2] raw_scaler reference SUCCESS
+```
+
+The model was successfully parsed.
+
+The schema was valid.
+
+The resolver was successfully created.
+
+The interpreter constructor also completed.
+
+However, execution stopped at:
+
+```text
+[A1] ENTER AllocateTensors()
+```
+
+without reaching:
+
+```text
+[A2] EXIT AllocateTensors()
+```
+
+This was an important observation.
+
+---
+
+# Test 4 Hypothesis
+
+Initially, `raw_scaler.h` appeared to be responsible for the problem.
+
+However, its data did not explain a significant SRAM increase.
+
+The evidence instead suggested that introducing `raw_scaler.h` changed the layout of the compiled binary.
+
+This could change the address of:
+
+```text
+depthwise_model
+```
+
+in program memory.
+
+The next test therefore investigated model alignment directly.
+
+---
+
+# Controlled Stripping Test 5
+
+Test 5 retained:
+
+```text
+raw_scaler.h
+```
+
+exactly as in Test 4.
+
+The important change was that the entire TFLite model was copied into an explicitly 16-byte-aligned RAM buffer before creating the TFLite model object.
+
+Conceptually:
+
+```text
+depthwise_model
+      ↓
+memcpy()
+      ↓
+16-byte aligned RAM buffer
+      ↓
+GetModel()
+      ↓
+MicroInterpreter
+```
+
+---
+
+# Model Alignment Discovery
+
+The original embedded model address was inspected.
+
+Observed:
+
+```text
+Original model addr: 0x330A4
+Original model mod16: 4
+```
+
+Therefore:
+
+```text
+Original model address % 16 = 4
+```
+
+The model was **not 16-byte aligned**.
+
+The RAM model copy was:
+
+```text
+Aligned model addr: 0x20011030
+Aligned model mod16: 0
+```
+
+Therefore:
+
+```text
+Aligned model address % 16 = 0
+```
+
+The tensor arena was also aligned:
+
+```text
+Tensor arena addr: 0x20001030
+Tensor arena mod16: 0
+```
+
+---
+
+# Test 5 Model Copy Verification
+
+The model was copied to aligned RAM and verified before use.
+
+Serial output confirmed:
+
+```text
+[C1] ENTER model memcpy
+[C2] Model copied to aligned RAM
+[C3] Model RAM copy verified
+```
+
+The same model bytes were therefore being executed.
+
+The important difference was their memory placement.
+
+---
+
+# Test 5 Tensor Allocation
+
+After loading the model from the aligned RAM buffer:
+
+```text
+[A1] ENTER AllocateTensors()
+[A2] EXIT AllocateTensors()
+
+Allocate status: 0
+
+[A3] AllocateTensors SUCCESS
+```
+
+TensorFlow Lite Micro reported:
+
+```text
+Arena used: 6852
+```
+
+This is far below the available:
+
+```text
+65536 bytes
+```
+
+and confirms that tensor-arena capacity was not the source of the previous failure.
+
+---
+
+# Test 5 Inference
+
+Input and output tensors were successfully obtained:
+
+```text
+Input bytes:       768
+Input scale:       0.04553470
+Input zero point:  13
+
+Output bytes:      4
+Output scale:      0.00390625
+Output zero point: -128
+```
+
+The test input was filled successfully:
+
+```text
+[F1] Filling input tensor
+[F2] Input filled
+```
+
+Inference then completed:
+
+```text
+[V1] ENTER Invoke()
+[V2] EXIT Invoke()
+
+Invoke status: 0
+
+[V3] Invoke SUCCESS
+```
+
+---
+
+# Test 5 Output
+
+The model produced:
+
+```text
+Class 0: 0.07812500
+Class 1: 0.28125000
+Class 2: 0.51171875
+Class 3: 0.12890625
+```
+
+The complete test ended with:
+
+```text
+CONTROLLED STRIPPING TEST 5 PASSED
+```
+
+and:
+
+```text
 raw_scaler.h: PRESENT
 Model source: 16-byte aligned RAM copy
 AllocateTensors(): PASS
 Invoke(): PASS
+```
 
-Current Root-Cause Finding
+---
 
-The current evidence strongly indicates that the original failure was associated with the placement/alignment of the embedded TFLite model FlatBuffer.
+# Root-Cause Finding
 
-The key comparison is:
+The controlled tests produced the following important comparison:
 
-Test 3:
-minimal firmware
-model placement happened to work
-AllocateTensors(): PASS
-Invoke(): PASS
+```text
+TEST 3
+--------------------------------
+Minimal TFLM
+AllocateTensors()    PASS
+Invoke()             PASS
 
-Test 4:
-raw_scaler.h added
-embedded model placement changed
-AllocateTensors(): FAIL
 
-Test 5:
-raw_scaler.h still present
-same model bytes copied to alignas(16) RAM
-AllocateTensors(): PASS
-Invoke(): PASS
+TEST 4
+--------------------------------
+Test 3 + raw_scaler.h
+AllocateTensors()    FAIL / STOP
 
-The original model address in Test 5 had:
 
-address mod 16 = 4
+TEST 5
+--------------------------------
+raw_scaler.h present
+same TFLite model
+model copied to aligned RAM
+AllocateTensors()    PASS
+Invoke()             PASS
+```
 
-while the working RAM copy had:
+The original model placement observed during Test 5 was:
 
-address mod 16 = 0
+```text
+mod16 = 4
+```
 
-This makes model alignment/placement the strongest current explanation for the inconsistent behavior.
+while the successful RAM copy was:
 
-This is still best described as a strongly supported root-cause finding, rather than a final production fix, because the current working workaround duplicates the model in RAM.
+```text
+mod16 = 0
+```
 
-Current Workaround
+The current evidence therefore strongly indicates that the previous runtime failure was associated with the **memory placement/alignment of the embedded TFLite FlatBuffer**.
 
-The currently proven workaround is:
+---
 
+# What Has Been Ruled Out
+
+The controlled tests provide strong evidence against several earlier possibilities.
+
+## Model corruption
+
+Unlikely.
+
+The same model successfully executes when copied to aligned RAM.
+
+## Invalid TFLite schema
+
+Ruled out.
+
+```text
+Model schema version:   3
+Runtime schema version: 3
+```
+
+## Missing operators
+
+Ruled out.
+
+All eight required operators are successfully registered.
+
+## MicroInterpreter construction
+
+Ruled out.
+
+Construction completes successfully.
+
+## Insufficient tensor arena
+
+Ruled out.
+
+Observed usage:
+
+```text
+6852 / 65536 bytes
+```
+
+## raw_scaler values themselves
+
+Not the direct cause.
+
+The scaler is present and actively referenced during successful Test 5 inference.
+
+## IMU subsystem
+
+Not required to reproduce the problem.
+
+The failure was reproduced without IMU initialization or sensor capture.
+
+---
+
+# Current Working Solution
+
+The currently proven workaround is to copy the embedded model into an aligned RAM buffer.
+
+Conceptually:
+
+```cpp
 alignas(16)
 static uint8_t alignedModel[depthwise_model_len];
 
@@ -583,270 +728,444 @@ memcpy(
 
 const tflite::Model* model =
     tflite::GetModel(alignedModel);
+```
 
-This successfully allows both:
+With this configuration:
 
-AllocateTensors()
-Invoke()
+```text
+raw_scaler.h       PASS
+GetModel()         PASS
+Schema             PASS
+Resolver           PASS
+Interpreter        PASS
+AllocateTensors()  PASS
+Input tensor       PASS
+Output tensor      PASS
+Invoke()           PASS
+```
 
-to execute with raw_scaler.h present.
+---
 
-The disadvantage is that the full model is copied into SRAM, consuming approximately another 10 KB of RAM.
+# Limitation of the RAM-Copy Workaround
 
-Therefore, this is considered a diagnostic/workaround solution rather than the desired final implementation.
+Although the RAM-copy solution works, it is not ideal for the final firmware.
 
-Preferred Production Fix
+The model size is:
 
-The next technical objective is to keep the TFLite model in program memory while guaranteeing correct alignment at declaration time.
+```text
+10,368 bytes
+```
 
-A future version of the generated model header should use an explicit alignment attribute such as:
+Copying it to SRAM therefore consumes approximately another 10 KB of RAM.
 
+The final production implementation should avoid this unnecessary duplication.
+
+---
+
+# Preferred Production Fix
+
+The preferred solution is to align the model array itself when generating or declaring:
+
+```text
+depthwise_model
+```
+
+For example:
+
+```cpp
 alignas(16)
 const unsigned char depthwise_model[] = {
     ...
 };
+```
 
-or another compiler-supported alignment mechanism appropriate for the Arduino Nano 33 BLE toolchain.
+or with an appropriate compiler-specific alignment attribute.
 
-The exact final declaration should be validated on the target board by printing:
+The model should then remain in program memory while satisfying the required alignment.
 
-(uintptr_t)depthwise_model % 16
+The address should be checked at runtime:
 
-and confirming that it equals:
+```cpp
+Serial.println(
+    (uintptr_t)depthwise_model % 16
+);
+```
 
+Expected result:
+
+```text
 0
+```
 
-before removing the RAM-copy workaround.
+After that, the RAM-copy workaround can be removed and the following operations retested:
 
-Debugging Strategy
+```text
+GetModel()
+AllocateTensors()
+Invoke()
+```
 
-The project deliberately used a controlled stripping methodology instead of making unrelated changes simultaneously.
+---
 
-The process was:
+# Serial Checkpoint Strategy
 
-Full application fails
-        ↓
-Remove subsystem
-        ↓
-Repeat exact TFLM test
-        ↓
-Observe last successful checkpoint
-        ↓
-Remove another subsystem
-        ↓
-Repeat
-        ↓
-Find minimal passing configuration
-        ↓
-Reintroduce one dependency
-        ↓
-Failure reappears
-        ↓
-Form targeted hypothesis
-        ↓
-Run isolated confirmation test
+Explicit checkpoints were added around critical TensorFlow Lite operations.
 
-This approach prevented IMU acquisition, preprocessing, TensorFlow Lite inference, memory behavior, and serial/USB issues from being debugged simultaneously.
+Example:
 
-Serial Diagnostics
-
-Explicit serial checkpoints were used around critical runtime operations.
-
-For example:
-
+```cpp
 checkpoint("[A1] ENTER AllocateTensors()");
 
 TfLiteStatus alloc_status =
     interpreter.AllocateTensors();
 
 checkpoint("[A2] EXIT AllocateTensors()");
+```
 
-The same pattern was used around:
+This made it possible to distinguish between:
 
-GetModel()
-Resolver registration
-MicroInterpreter construction
-AllocateTensors()
-Input/output tensor access
-Invoke()
-
-This made it possible to distinguish a returned TensorFlow Lite error from a crash/hang occurring inside the called function.
-
-USB / Serial Upload Issue
-
-During development, a separate Arduino USB/serial issue occasionally appeared:
-
-No device found on COM19
+```text
+Function returns an error
+```
 
 and:
 
-Serial port busy.
-Could not connect to COM19 serial port.
+```text
+Execution stops inside function
+```
 
-This issue is separate from the TensorFlow Lite runtime problem.
+Similar checkpoints were used around:
 
-Successful uploads were repeatedly confirmed by output such as:
+```text
+GetModel()
+Resolver construction
+MicroInterpreter construction
+AllocateTensors()
+Tensor access
+Invoke()
+```
 
-100%
+This approach was essential for locating the runtime failure.
+
+---
+
+# Arduino Upload / COM Port Issue
+
+A separate USB/serial issue was observed during development.
+
+Arduino IDE occasionally reported:
+
+```text
+No device found on COM19
+```
+
+or:
+
+```text
+Failed uploading:
+uploading error: exit status 1
+```
+
+This problem is independent of TensorFlow Lite Micro.
+
+Successful uploads were confirmed with:
+
+```text
+100% (45/45 pages)
+
 Done in ~7–8 seconds
+```
 
-When the port disappeared, entering the board bootloader with a double reset and reselecting the active COM port restored upload functionality.
+When necessary, the Nano 33 BLE bootloader could be entered by double-pressing reset and selecting the newly detected COM port.
 
-Confirmed Findings So Far
+---
 
-The following points have now been directly observed:
+# Memory Observations
 
-The project compiles for Arduino Nano 33 BLE.
+Typical compilation reports during the controlled tests were approximately:
 
-The embedded INT8 Depthwise CNN is 10,368 bytes.
+```text
+Program storage:
+~18%
 
-Model schema version and runtime schema version both equal 3.
+Dynamic memory:
+~42–46%
+```
 
-The model requires eight TensorFlow Lite operators.
+For example, one configuration reported:
 
-All eight operators can be registered successfully.
+```text
+Sketch uses 181808 bytes
+Global variables use 122472 bytes
+```
 
-MicroInterpreter construction succeeds.
+out of:
 
-A 64 KB aligned tensor arena is sufficient for this model.
+```text
+983040 bytes program storage
+262144 bytes dynamic memory
+```
 
-Actual observed tensor-arena usage is approximately 6,852 bytes.
+Therefore, the project still has substantial Flash and SRAM headroom.
 
-Test 3 proved that minimal AllocateTensors() and Invoke() succeed.
+---
 
-Test 4 showed that adding raw_scaler.h can change execution behavior even though scaler values themselves are valid.
+# Confirmed Findings
 
-raw_scaler.h is not inherently incompatible with the model.
+At the current stage, the following have been demonstrated experimentally on the Arduino Nano 33 BLE:
 
-Test 5 proved that raw_scaler.h and TFLM inference work together when the model is loaded from a 16-byte-aligned RAM copy.
+- The firmware compiles successfully.
+- The INT8 Depthwise CNN is embedded successfully.
+- The model size is 10,368 bytes.
+- Model schema version 3 is correct.
+- Runtime schema version 3 matches the model.
+- All required TFLite operators are known.
+- All required operators can be registered.
+- `MicroInterpreter` construction succeeds.
+- A 64 KB tensor arena is sufficient.
+- Actual observed tensor-arena usage is approximately 6,852 bytes.
+- Input tensor creation succeeds.
+- Output tensor creation succeeds.
+- INT8 quantization parameters are accessible.
+- `AllocateTensors()` succeeds in the controlled configuration.
+- `Invoke()` succeeds on the target MCU.
+- The model generates valid four-class output.
+- `raw_scaler.h` can coexist with successful inference.
+- The same model works when copied to 16-byte-aligned RAM.
+- The original model placement observed in Test 5 was not 16-byte aligned.
+- The aligned RAM model placement was 16-byte aligned.
+- The previous failure is not explained by tensor-arena exhaustion.
+- The previous failure does not require the IMU subsystem to occur.
 
-The original model placement observed in Test 5 was not 16-byte aligned (mod16 = 4).
+---
 
-The working RAM copy was 16-byte aligned (mod16 = 0).
-
-The model itself is not corrupted.
-
-The TensorFlow Lite Micro runtime is able to execute the model successfully on the Arduino Nano 33 BLE.
-
-IMU code is not required to reproduce the original allocation failure.
-
-The failure is not explained by insufficient tensor-arena capacity.
-
-Current Leading Conclusion
+# Current Leading Conclusion
 
 The strongest current conclusion is:
 
-The embedded TFLite FlatBuffer must be placed with suitable alignment. Changes elsewhere in the firmware can alter the program-memory layout and expose an alignment-sensitive failure during AllocateTensors().
+> The embedded TFLite FlatBuffer must be placed with suitable memory alignment. Changes elsewhere in the firmware can alter binary layout and expose an alignment-sensitive failure during TensorFlow Lite Micro tensor allocation.
 
-The proven temporary solution is to execute the model from a 16-byte-aligned RAM copy.
+The 16-byte-aligned RAM copy is a proven workaround.
 
-The preferred final solution is to enforce suitable alignment on the model array itself so the model can remain in program memory without wasting SRAM.
+The preferred production solution is to guarantee suitable alignment directly on the embedded model array.
 
-Current Project Status
+---
 
-Model training/conversion             DONE
-INT8 model export                     DONE
-Model embedded in firmware            DONE
-Model schema validation               PASS
-Operator identification               PASS
-Resolver construction                 PASS
-Interpreter construction              PASS
+# Current Project Status
 
-Controlled Stripping Test 1           DONE
-Controlled Stripping Test 2           DONE
-Controlled Stripping Test 3           PASS
-Controlled Stripping Test 4           FAIL at AllocateTensors()
-Controlled Stripping Test 5           PASS
+```text
+Model training/conversion              DONE
+INT8 quantization                      DONE
+Model export                           DONE
+Model embedded in firmware             DONE
 
-Minimal on-device TFLM inference      PROVEN
-raw_scaler + TFLM inference           PROVEN with aligned RAM model
-Tensor arena sizing                   SUFFICIENT
-Model alignment issue                 STRONGLY SUPPORTED
+Model schema validation                PASS
+Operator identification                PASS
+Resolver construction                  PASS
+Interpreter construction               PASS
 
-Final aligned Flash model declaration NEXT
-Full live gesture classifier          NEXT AFTER ALIGNMENT FIX
+Controlled Stripping Test 1            DONE
+Controlled Stripping Test 2            DONE
+Controlled Stripping Test 3            PASS
+Controlled Stripping Test 4            FAIL at AllocateTensors()
+Controlled Stripping Test 5            PASS
 
-Immediate Next Steps
+Minimal TFLM inference                 PASS
+AllocateTensors()                      PASS
+Invoke()                               PASS
+raw_scaler + TFLM                      PASS
+Tensor arena sizing                    VERIFIED
+Model alignment issue                  STRONGLY SUPPORTED
 
-The current recommended development sequence is:
+Aligned model in program memory        NEXT
+Live IMU restoration                   PENDING
+Real gesture inference                 PENDING
+Accuracy validation                    PENDING
+Performance benchmarking               PENDING
+```
 
-1. Regenerate or edit depthwise_model.h
-   so depthwise_model is explicitly 16-byte aligned
+---
+
+# Next Development Stage
+
+The debugging phase has now reached an important milestone.
+
+The next goal is no longer to prove that TensorFlow Lite Micro can run the model.
+
+That has already been demonstrated.
+
+The next sequence is:
+
+```text
+Explicitly align depthwise_model
         ↓
-2. Confirm model address mod16 == 0 on the board
+Keep model in program memory
         ↓
-3. Run AllocateTensors() directly from Flash/program memory
-   without the RAM model copy
+Remove temporary RAM model copy
         ↓
-4. Confirm Invoke() succeeds
+Confirm AllocateTensors()
         ↓
-5. Restore raw scaling/preprocessing
+Confirm Invoke()
         ↓
-6. Restore sample buffer
+Restore preprocessing
         ↓
-7. Restore IMU initialization and live capture
+Restore sample buffer
         ↓
-8. Run real gesture inference
+Restore IMU
         ↓
-9. Validate prediction quality
+Capture 128 × 6 windows
         ↓
-10. Benchmark latency, RAM, Flash, and accuracy
+Scale real IMU data
+        ↓
+Quantize to INT8
+        ↓
+Run CNN
+        ↓
+Dequantize output
+        ↓
+Select highest-probability class
+        ↓
+Report gesture + confidence
+```
 
-Expected Final Runtime Architecture
+---
 
-The intended production pipeline remains:
+# Intended Final Runtime Pipeline
 
-Arduino Nano 33 BLE IMU
-        ↓
-Motion detection
-        ↓
-128 × 6 sample window
-        ↓
-raw_mean / raw_std scaling
-        ↓
-INT8 quantization
-        ↓
-Depthwise CNN
-(aligned embedded model)
-        ↓
-TensorFlow Lite Micro
-        ↓
-4-class probability output
-        ↓
-argmax
-        ↓
-Gesture label + confidence
+The final classifier should operate as:
 
-The RAM model copy used in Test 5 is not intended to remain in the final optimized firmware if model alignment can be guaranteed directly in depthwise_model.h.
+```text
+              Arduino Nano 33 BLE
+                       │
+                       ▼
+                     IMU
+                       │
+                       ▼
+               Motion Detection
+                       │
+                       ▼
+                128 × 6 Window
+                       │
+                       ▼
+               Feature Scaling
+              raw_mean / raw_std
+                       │
+                       ▼
+               INT8 Quantization
+                       │
+                       ▼
+                 Depthwise CNN
+                       │
+                       ▼
+           TensorFlow Lite Micro
+                       │
+                       ▼
+                 4-Class Output
+                       │
+                       ▼
+                 Dequantization
+                       │
+                       ▼
+                     Argmax
+                       │
+                       ▼
+             Gesture + Confidence
+```
 
-Development Principle
+---
 
-A key principle of this project remains:
+# Development Principle
 
-Prove each embedded subsystem independently before rebuilding the complete real-time classifier.
+A central principle of this project is:
 
-The project has now successfully passed the minimal TensorFlow Lite Micro milestone and has isolated a strongly supported model-placement/alignment issue.
+> Prove each embedded subsystem independently before rebuilding the complete real-time classifier.
 
-The next milestone is to convert the Test 5 workaround into a clean production alignment fix and then restore the live IMU gesture-classification pipeline.
+Instead of debugging:
 
-Current Milestone
+```text
+IMU
++
+buffering
++
+preprocessing
++
+quantization
++
+TensorFlow Lite
++
+memory
++
+USB serial
+```
 
-Milestone: Minimal on-device TFLite Micro inference — PASSED
+simultaneously, each subsystem is introduced in a controlled manner.
 
-Current checkpoint:
+This approach successfully isolated an issue that initially appeared to be caused by TensorFlow Lite memory allocation but was strongly associated with the placement/alignment of the embedded model.
 
+---
+
+# Current Milestone
+
+## Minimal On-Device TFLite Micro Inference — PASSED
+
+Current verified configuration:
+
+```text
+Platform:
 Arduino Nano 33 BLE
-Depthwise CNN INT8
-Model size: 10,368 bytes
-Tensor arena: 64 KB
-Observed arena use: 6,852 bytes
-AllocateTensors(): PASS
-Invoke(): PASS
-raw_scaler.h: compatible
-Aligned RAM model workaround: PASS
 
-Next milestone:
+Model:
+INT8 Depthwise CNN
 
-16-byte-aligned model in program memory
+Model size:
+10,368 bytes
+
+Input:
+1 × 128 × 6 INT8
+
+Output:
+1 × 4 INT8
+
+Tensor arena:
+65,536 bytes
+
+Observed arena usage:
+6,852 bytes
+
+raw_scaler.h:
+PRESENT
+
+Model source:
+16-byte-aligned RAM copy
+
+AllocateTensors():
+PASS
+
+Invoke():
+PASS
+```
+
+The next milestone is:
+
+```text
+Aligned embedded model
+without RAM duplication
         ↓
-Full live IMU gesture classifier
+Full real-time IMU gesture classification
+```
+
+---
+
+# About
+
+TinyML gesture-classification project deploying a quantized INT8 Depthwise CNN on the Arduino Nano 33 BLE using TensorFlow Lite Micro, with real-time IMU inference, embedded preprocessing, and memory/alignment optimization.
+
+---
+
+# Project Status
+
+**Active development — core on-device neural-network inference is working.**
+
+The TensorFlow Lite Micro execution path has been successfully validated on the physical Arduino Nano 33 BLE.
+
+The current focus is transitioning from the diagnostic aligned-RAM model configuration to a clean aligned embedded-model implementation, followed by restoration of the complete real-time IMU gesture-classification pipeline.
