@@ -1,0 +1,4 @@
+Model,Offline Accuracy (%),Parameters,TFLite Size (KB),Flash (bytes),Compile SRAM (bytes),Tensor Arena Used (bytes),Inference (ms),Total Processing (ms)
+Standard CNN INT8,100,2660,10.71,194408,115832,6644,25.37,26.76
+Depthwise CNN INT8,100,1330,11.3,205424,115872,7156,16.88,18.33
+RMS Tiny INT8,100,284,3.352,165960,115640,948,0.165,0.346
