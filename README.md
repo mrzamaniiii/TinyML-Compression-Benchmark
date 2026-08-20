@@ -1088,4 +1088,4 @@ The final system performs gesture recognition completely on-device.
 
 # Project Status
 
-**Active development — Study 1 and Study 2 are complete. The final embedded architecture has been selected based on physical Arduino measurements. Remaining work is focused on repository cleanup, final figures, and presentation/thesis integration.**
+**Active development — Study 1 and Study 2 are complete. The final embedded architecture has been selected based on physical Arduino measurements.**
