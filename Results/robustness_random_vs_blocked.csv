@@ -1,0 +1,3 @@
+Model,Random Split,Random Accuracy (%),Random Macro F1,Blocked Split,Blocked Accuracy (%),Blocked Macro F1,Accuracy Difference (pp),Macro F1 Difference
+1-NN Raw Signal,80/10/10,100.0,1.0,60/20/20,100.0,1.0,0.0,0.0
+RMS Tiny FP32,80/10/10,100.0,1.0,60/20/20,100.0,1.0,0.0,0.0

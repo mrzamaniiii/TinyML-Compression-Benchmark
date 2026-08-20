@@ -1,0 +1,14 @@
+Metric,Value
+Project,TinyML IMU Classification
+Selected Model,RMS Tiny INT8
+Input Representation,6 RMS IMU Features
+Input Features,6
+Classes,4
+Architecture,Dense(16) → Dense(8) → Softmax(4)
+Parameters,284
+NN MACs,256
+TFLite Size (KB),3.4140625
+Offline Accuracy (%),100.0
+Macro F1,1.0
+Arduino Inference (ms),0.165
+Total Processing (ms),0.346

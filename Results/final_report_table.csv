@@ -1,0 +1,4 @@
+Model,Input Representation,Input Values,Parameters,NN MACs,TFLite Size (KB),Offline Accuracy (%),Macro F1,Arduino Flash (Bytes),Tensor Arena (Bytes),Arduino Inference (ms),Total Processing (ms)
+Standard CNN INT8,Raw Signal,768,2660,160320,9.796875,100.0,1.0,194408,6644,25.37,26.76
+Depthwise CNN INT8,Raw Signal,768,1330,52544,10.125,100.0,1.0,205424,7156,16.88,18.33
+RMS Tiny INT8,RMS,6,284,256,3.4140625,100.0,1.0,165960,948,0.165,0.346
