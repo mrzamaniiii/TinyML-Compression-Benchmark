@@ -342,6 +342,21 @@ depthwise_cnn_scaler.h
 ```
 These C/C++ header files can be directly included in Arduino TensorFlow Lite Micro projects.
 
+## Limitations and Future Work
+
+### Limitations
+
+- The main test set contains only 32 windows, so the reported 100% accuracy should not be interpreted as perfect real-world generalization.
+- The dataset currently has limited user and recording diversity.
+- Power and energy consumption were not directly measured.
+
+### Future Work
+
+- Collect a larger multi-user and multi-session dataset.
+- Perform standardized real-time evaluation for all models.
+- Measure power consumption and energy per inference.
+- Investigate additional compression methods such as pruning or neural architecture search.
+
 # Conclusion
 
 This project demonstrates that efficient TinyML deployment can be achieved through both neural network optimization and feature engineering.
