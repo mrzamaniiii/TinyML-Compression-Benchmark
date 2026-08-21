@@ -346,7 +346,6 @@ These C/C++ header files can be directly included in Arduino TensorFlow Lite Mic
 
 ### Limitations
 
-- The main test set contains only 32 windows, so the reported 100% accuracy should not be interpreted as perfect real-world generalization.
 - The dataset currently has limited user and recording diversity.
 - Power and energy consumption were not directly measured.
 
