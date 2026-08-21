@@ -309,7 +309,10 @@ The RMS Tiny INT8 model provides the smallest and most computationally efficient
 
 # Deployment Files
 
-The repository contains generated files required for embedded deployment.
+# Results and Reproducibility
+
+All quantitative results are provided in the Results folder. These files contain the final benchmark metrics, embedded measurements, and robustness evaluation results.
+
 
 ## TensorFlow Lite Models
 
@@ -317,7 +320,6 @@ The repository contains generated files required for embedded deployment.
 rms_tiny_model.h
 depthwise_cnn_model.h
 ```
-
 
 ## Input Normalization Parameters
 
