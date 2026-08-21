@@ -116,7 +116,6 @@ The goal is to reduce:
 
 while maintaining classification accuracy.
 
-
 ## Compared Architectures
 
 The following models are evaluated:
