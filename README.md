@@ -18,7 +18,6 @@ Two optimization approaches are investigated:
    - Lightweight dense neural network
 
 The final models are deployed and benchmarked on a real embedded platform using TensorFlow Lite Micro.
-## System Pipeline
 
 ## System Pipeline
 
@@ -48,19 +47,14 @@ Gesture Prediction
 
 - Arduino Nano 33 BLE
 
-
 ### Software Framework
 
 - TensorFlow Lite Micro
 - TensorFlow Lite INT8 Quantization
 - Embedded C/C++ model deployment
 
-
 ### Deployment Goal
 
 The objective is to achieve real-time gesture recognition directly on a microcontroller without cloud processing.
-
-
-### Deployment Goal
 
 The objective is to achieve real-time gesture recognition directly on a microcontroller without cloud processing.
