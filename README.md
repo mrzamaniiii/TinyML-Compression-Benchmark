@@ -259,10 +259,6 @@ Model characteristics:
 | Test Accuracy | 100% |
 | Macro F1 | 1.0000 |
 
-
-
-Depthwise CNN provides lower inference latency compared with the Standard CNN, making it more suitable for embedded real-time applications.
-
 ## RMS Tiny INT8 Arduino Performance
 
 The final RMS Tiny INT8 model was deployed on the Arduino Nano 33 BLE using TensorFlow Lite Micro.
