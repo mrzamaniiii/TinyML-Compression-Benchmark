@@ -175,6 +175,91 @@ The final INT8 models were evaluated on the Arduino Nano 33 BLE.
 
 ![Arduino Inference Latency](Figure/final_arduino_inference_latency.png)
 
+# Study 2 — Feature Engineering Benchmark
+
+## Objective
+
+The second study investigates whether feature extraction can provide a more efficient TinyML solution compared with raw signal processing.
+
+The main research question:
+
+> Can a lightweight feature representation achieve similar accuracy with significantly lower model complexity?
+
+
+All feature representations use the same classifier architecture:
+
+```text
+Input
+ |
+ v
+Dense(64)
+ |
+ v
+Dense(32)
+ |
+ v
+Dense(4)
+```
+
+This controlled comparison ensures that differences are mainly caused by the input representation rather than model architecture changes.
+
+## Feature Representation Comparison
+
+Four input representations were evaluated:
+
+| Representation | Input Features | Test Accuracy |
+|---|---:|---:|
+| Raw Signal | 768 | 100% |
+| RMS | 6 | 100% |
+| FFT | 48 | 100% |
+| Spectral | 12 | 96.875% |
+
+
+The RMS representation achieves the same classification accuracy as the raw signal while reducing the input dimensionality from 768 values to only 6 features.
+
+## Accuracy vs Model Complexity
+
+![Accuracy vs Model Complexity](Figure/study2_accuracy_vs_parameters.png)
+
+The comparison demonstrates that feature engineering can significantly reduce model complexity without sacrificing classification performance.
+
+# Final Selected Model — RMS Tiny INT8
+
+Based on the previous experiments, the RMS representation was selected for the final embedded implementation.
+
+The final model combines:
+
+- RMS feature extraction
+- Tiny fully-connected neural network
+- INT8 quantization
+- TensorFlow Lite Micro deployment
+
+## RMS Tiny INT8 Architecture
+
+```text
+6 RMS Features
+        |
+        v
+Dense(16)
+        |
+        v
+Dense(8)
+        |
+        v
+Softmax(4)
+```
+
+Model characteristics:
+
+| Metric | Value |
+|---|---:|
+| Parameters | 284 |
+| NN MACs | 256 |
+| TFLite Size | 3.414 KB |
+| Test Accuracy | 100% |
+| Macro F1 | 1.0000 |
+
+
 
 Depthwise CNN provides lower inference latency compared with the Standard CNN, making it more suitable for embedded real-time applications.
 
