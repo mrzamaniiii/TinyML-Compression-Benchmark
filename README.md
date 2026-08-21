@@ -18,3 +18,45 @@ Two optimization approaches are investigated:
    - Lightweight dense neural network
 
 The final models are deployed and benchmarked on a real embedded platform using TensorFlow Lite Micro.
+## System Pipeline
+
+```text
+6-Axis IMU Sensor
+        |
+        v
+Window Segmentation
+(128 × 6 samples)
+        |
+        v
+Feature Extraction / CNN Processing
+        |
+        v
+INT8 TinyML Model
+        |
+        v
+Arduino Nano 33 BLE
+        |
+        v
+Gesture Prediction
+
+---
+
+```markdown
+
+## Hardware and Software
+
+### Target Hardware
+
+- Arduino Nano 33 BLE
+
+
+### Software Framework
+
+- TensorFlow Lite Micro
+- TensorFlow Lite INT8 Quantization
+- Embedded C/C++ model deployment
+
+
+### Deployment Goal
+
+The objective is to achieve real-time gesture recognition directly on a microcontroller without cloud processing.
