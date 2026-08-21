@@ -56,5 +56,3 @@ Gesture Prediction
 ### Deployment Goal
 
 The objective is to achieve real-time gesture recognition directly on a microcontroller without cloud processing.
-
-The objective is to achieve real-time gesture recognition directly on a microcontroller without cloud processing.
