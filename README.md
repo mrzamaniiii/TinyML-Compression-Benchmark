@@ -124,3 +124,58 @@ The following models are evaluated:
 - Standard CNN
 - Depthwise CNN
 - INT8 quantized models
+
+## Study 1 Results
+
+### INT8 Model Comparison
+
+All CNN models were converted to TensorFlow Lite INT8 format for embedded deployment.
+
+| Model | Parameters | NN MACs |
+|---|---:|---:|
+| Standard CNN INT8 | 2,660 | 160,320 |
+| Depthwise CNN INT8 | 1,330 | 52,544 |
+
+
+The Depthwise CNN reduces the computational cost compared with the Standard CNN while maintaining the same classification performance.
+
+## Neural Network Computational Cost
+
+The neural-network computational cost is measured using Multiply-Accumulate operations (MACs).
+
+![Neural Network MAC Comparison](Figure/final_nn_mac_comparison.png)
+
+
+The comparison shows that depthwise separable convolutions significantly reduce the number of operations required for inference.
+
+## Embedded Arduino Benchmark
+
+The final INT8 models were evaluated on the Arduino Nano 33 BLE.
+
+### Standard CNN INT8
+
+| Metric | Value |
+|---|---:|
+| Flash Memory | 194,408 bytes |
+| Tensor Arena | 6,644 bytes |
+| Inference Time | 25.370 ms |
+| Total Processing Time | 26.760 ms |
+
+
+### Depthwise CNN INT8
+
+| Metric | Value |
+|---|---:|
+| Flash Memory | 205,424 bytes |
+| Tensor Arena | 7,156 bytes |
+| Inference Time | 16.880 ms |
+| Total Processing Time | 18.330 ms |
+
+## Arduino Inference Latency Comparison
+
+![Arduino Inference Latency](Figure/final_arduino_inference_latency.png)
+
+
+Depthwise CNN provides lower inference latency compared with the Standard CNN, making it more suitable for embedded real-time applications.
+
+
