@@ -56,3 +56,71 @@ Gesture Prediction
 ### Deployment Goal
 
 The objective is to achieve real-time gesture recognition directly on a microcontroller without cloud processing.
+
+## Dataset and IMU Input
+
+The system uses 6-axis inertial measurement unit (IMU) data.
+
+### Input Channels
+
+| Channel | Signal |
+|---|---|
+| aX | Accelerometer X-axis |
+| aY | Accelerometer Y-axis |
+| aZ | Accelerometer Z-axis |
+| gX | Gyroscope X-axis |
+| gY | Gyroscope Y-axis |
+| gZ | Gyroscope Z-axis |
+
+
+### Window Configuration
+
+Each input sample is segmented into fixed-size windows:
+
+```text
+Window size:
+
+128 samples × 6 channels
+
+Total raw input values:
+
+768
+```
+
+## Gesture Classification
+
+The system performs four-class gesture recognition.
+
+| Class ID | Gesture |
+|---|---|
+| 0 | circle |
+| 1 | left_right |
+| 2 | rest |
+| 3 | up_down |
+
+
+Each gesture class is evaluated during training, validation, and testing.
+
+# Study 1 — Neural Network Compression Benchmark
+
+## Objective
+
+The first study evaluates different neural network architectures for embedded deployment.
+
+The goal is to reduce:
+
+- Model size
+- Computational cost
+- Memory usage
+- Inference latency
+
+while maintaining classification accuracy.
+
+
+## Compared Architectures
+
+The following models are evaluated:
+
+- Standard CNN
+- Depthwise CNN
+- INT8 quantized models
