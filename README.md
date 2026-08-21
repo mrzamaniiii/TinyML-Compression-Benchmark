@@ -131,10 +131,11 @@ The following models are evaluated:
 
 All CNN models were converted to TensorFlow Lite INT8 format for embedded deployment.
 
-| Model | Parameters | NN MACs |
-|---|---:|---:|
-| Standard CNN INT8 | 2,660 | 160,320 |
-| Depthwise CNN INT8 | 1,330 | 52,544 |
+| Model | Representation | Parameters | NN MACs | TFLite Size |
+|---|---|---:|---:|---:|
+| Standard CNN INT8 | Raw Signal | 2,660 | 160,320 | 9.797 KB |
+| Depthwise CNN INT8 | Raw Signal | 1,330 | 52,544 | 10.125 KB |
+| RMS Tiny INT8 | RMS Features | 284 | 256 | 3.414 KB |
 
 
 The Depthwise CNN reduces the computational cost compared with the Standard CNN while maintaining the same classification performance.
