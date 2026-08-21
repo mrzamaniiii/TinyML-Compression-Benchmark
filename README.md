@@ -2,6 +2,19 @@
 
 ## Overview
 
+## System Pipeline Overview
+
+The following diagram summarizes the complete workflow, from
+six-axis IMU acquisition and preprocessing to model optimization,
+feature engineering, INT8 deployment, and real-time inference on
+the Arduino Nano 33 BLE.
+
+<p align="center">
+  <img src="Figure/system_pipeline_overview.png"
+       alt="TinyML IMU gesture recognition system pipeline"
+       width="100%">
+</p>
+
 This project investigates efficient TinyML solutions for real-time IMU-based gesture recognition on the Arduino Nano 33 BLE.
 
 The main objective is to reduce computational cost, memory usage, and inference latency while maintaining high classification accuracy.
