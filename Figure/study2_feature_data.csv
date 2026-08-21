@@ -1,5 +1,0 @@
-Representation,Input Features,Parameters,Accuracy (%),FP32 TFLite Size (KB),Host Feature Time (ms),Host Classifier Time (ms),Host Total Pipeline (ms)
-Raw,768,51428,100.0,202.941406,0.000757,0.010407,0.011163
-RMS,6,2660,100.0,12.441406,0.183153,0.006193,0.189346
-FFT,48,5348,100.0,22.941406,0.196081,0.003966,0.200047
-Spectral,12,3044,96.875,13.941406,3.405304,0.004111,3.409415
