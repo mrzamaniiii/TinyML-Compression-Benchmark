@@ -1,6 +1,0 @@
-Model,Accuracy (%),Parameters,TFLite Size (KB)
-Dense Raw FP32,100,51428,203.93
-Standard CNN FP32,100,2660,15.7
-Standard CNN INT8,100,2660,10.71
-Depthwise CNN FP32,100,1330,11.94
-Depthwise CNN INT8,100,1330,11.3
