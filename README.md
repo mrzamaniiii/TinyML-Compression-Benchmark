@@ -263,4 +263,108 @@ Model characteristics:
 
 Depthwise CNN provides lower inference latency compared with the Standard CNN, making it more suitable for embedded real-time applications.
 
+## RMS Tiny INT8 Arduino Performance
+
+The final RMS Tiny INT8 model was deployed on the Arduino Nano 33 BLE using TensorFlow Lite Micro.
+
+
+Measured embedded performance:
+
+| Metric | Value |
+|---|---:|
+| Arduino Flash | 165,960 bytes |
+| Tensor Arena | 948 bytes |
+| Neural Network Inference | 0.165 ms |
+| Total Processing Time | 0.346 ms |
+
+
+The complete pipeline includes:
+
+- RMS feature extraction
+- Input normalization
+- INT8 neural network inference
+- Gesture prediction
+
+# Final Embedded Model Comparison
+
+The final deployment comparison includes the three INT8 models evaluated on the Arduino Nano 33 BLE.
+
+| Model | Representation | Parameters | NN MACs | TFLite Size |
+|---|---|---:|---:|---:|
+| Standard CNN INT8 | Raw Signal | 2,660 | 160,320 | 9.797 KB |
+| Depthwise CNN INT8 | Raw Signal | 1,330 | 52,544 | 10.117 KB |
+| RMS Tiny INT8 | RMS Features | 284 | 256 | 3.406 KB |
+
+
+The RMS Tiny INT8 model provides the smallest and most computationally efficient solution.
+
+## Final Deployment Figures
+
+
+### TFLite Model Size Comparison
+
+![TFLite Model Size Comparison](Figure/final_tflite_model_size.png)
+
+
+
+### Arduino Inference Latency Comparison
+
+![Arduino Inference Latency](Figure/final_arduino_inference_latency.png)
+
+# Deployment Files
+
+The repository contains generated files required for embedded deployment.
+
+## TensorFlow Lite Models
+
+```
+rms_tiny_model.h
+depthwise_cnn_model.h
+```
+
+
+## Input Normalization Parameters
+
+```
+rms_feature_scaler.h
+depthwise_cnn_scaler.h
+```
+These C/C++ header files can be directly included in Arduino TensorFlow Lite Micro projects.
+
+# Conclusion
+
+This project demonstrates that efficient TinyML deployment can be achieved through both neural network optimization and feature engineering.
+
+The final RMS Tiny INT8 model achieves:
+
+- 100% test accuracy
+- Only 284 parameters
+- Only 256 neural-network MAC operations
+- 3.414 KB TFLite model size
+- 0.165 ms Arduino inference latency
+
+
+Compared with larger CNN architectures, RMS Tiny INT8 provides a significantly lighter solution while maintaining the same recognition performance.
+
+This makes it suitable for real-time gesture recognition on resource-constrained microcontrollers.
+
+# Repository Structure
+
+```text
+TinyML-Compression-Benchmark/
+
+├── Arduino/
+│
+├── Code/
+│
+├── Data/
+│
+├── Figure/
+│
+├── Results/
+│
+├── Presentation/
+│
+└── README.md
+```
 
