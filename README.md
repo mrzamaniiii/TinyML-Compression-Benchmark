@@ -20,6 +20,8 @@ Two optimization approaches are investigated:
 The final models are deployed and benchmarked on a real embedded platform using TensorFlow Lite Micro.
 ## System Pipeline
 
+## System Pipeline
+
 ```text
 6-Axis IMU Sensor
         |
@@ -38,10 +40,7 @@ Arduino Nano 33 BLE
         |
         v
 Gesture Prediction
-
----
-
-```markdown
+```
 
 ## Hardware and Software
 
@@ -55,6 +54,11 @@ Gesture Prediction
 - TensorFlow Lite Micro
 - TensorFlow Lite INT8 Quantization
 - Embedded C/C++ model deployment
+
+
+### Deployment Goal
+
+The objective is to achieve real-time gesture recognition directly on a microcontroller without cloud processing.
 
 
 ### Deployment Goal
