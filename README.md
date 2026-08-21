@@ -12,7 +12,7 @@ the Arduino Nano 33 BLE.
 <p align="center">
   <img src="Figure/system_pipeline_overview.png"
        alt="TinyML IMU gesture recognition system pipeline"
-       width="100%">
+       width="90%">
 </p>
 
 This project investigates efficient TinyML solutions for real-time IMU-based gesture recognition on the Arduino Nano 33 BLE.
