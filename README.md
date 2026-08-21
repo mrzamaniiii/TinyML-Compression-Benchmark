@@ -366,3 +366,11 @@ TinyML-Compression-Benchmark/
 └── README.md
 ```
 
+## Reproducing the Experiments
+
+1. Clone the repository.
+2. Open Code/TinyML_Compression_Benchmark_.ipynb.
+3. Install the dependencies from requirements.txt.
+4. Run the notebook from top to bottom.
+5. Final result tables are exported to Results/.
+6. Final deployment headers are available in Arduino/.
