@@ -12,20 +12,23 @@ classification accuracy.
 Two optimization approaches are investigated:
 
 1. **Neural-network compression**
-   - Standard CNN
-   - Depthwise CNN
-   - INT8 quantization
+
+   * Standard CNN
+   * Depthwise CNN
+   * INT8 quantization
 
 2. **Feature engineering**
-   - Raw signal
-   - RMS features
-   - FFT features
-   - Spectral features
-   - Lightweight dense neural networks
+
+   * Raw signal
+   * RMS features
+   * FFT features
+   * Spectral features
+   * Lightweight dense neural networks
 
 The final models are deployed and benchmarked on a physical
 Arduino Nano 33 BLE using TensorFlow Lite Micro.
 
+---
 
 ## System Pipeline Overview
 
@@ -39,26 +42,69 @@ feature engineering, INT8 deployment, and real-time inference.
        width="90%">
 </p>
 
+---
+
+## Hardware Setup
+
+The final deployment and latency measurements were performed on a
+real Arduino Nano 33 BLE connected to a laptop running the Arduino
+IDE and TensorFlow Lite Micro-based inference code.
+
+<p align="center">
+  <img src="Figure/hardware_setup.jpg"
+       alt="Arduino Nano 33 BLE TinyML hardware setup"
+       width="75%">
+</p>
+
+This hardware setup was used to validate real embedded inference
+rather than only offline notebook results.
+
+---
+
+## System Pipeline
+
+```text
+6-Axis IMU Sensor
+        |
+        v
+Window Segmentation
+(128 × 6 samples)
+        |
+        v
+Feature Extraction / CNN Processing
+        |
+        v
+INT8 TinyML Model
+        |
+        v
+Arduino Nano 33 BLE
+        |
+        v
+Gesture Prediction
+```
+
+---
 
 ## Hardware and Software
 
 ### Target Hardware
 
-- Arduino Nano 33 BLE
+* Arduino Nano 33 BLE
 
 ### Software Framework
 
-- TensorFlow
-- TensorFlow Lite
-- TensorFlow Lite Micro
-- INT8 post-training quantization
-- Embedded C/C++ deployment
+* TensorFlow
+* TensorFlow Lite
+* TensorFlow Lite Micro
+* INT8 post-training quantization
+* Embedded C/C++ deployment
 
 ### Deployment Goal
 
 The objective is to perform real-time gesture recognition directly
 on a resource-constrained microcontroller without cloud processing.
 
+---
 
 ## Dataset and IMU Input
 
@@ -66,14 +112,14 @@ The system uses six-axis inertial measurement unit (IMU) data.
 
 ### Input Channels
 
-| Channel | Signal |
-|---|---|
-| aX | Accelerometer X-axis |
-| aY | Accelerometer Y-axis |
-| aZ | Accelerometer Z-axis |
-| gX | Gyroscope X-axis |
-| gY | Gyroscope Y-axis |
-| gZ | Gyroscope Z-axis |
+| Channel | Signal               |
+| ------- | -------------------- |
+| aX      | Accelerometer X-axis |
+| aY      | Accelerometer Y-axis |
+| aZ      | Accelerometer Z-axis |
+| gX      | Gyroscope X-axis     |
+| gY      | Gyroscope Y-axis     |
+| gZ      | Gyroscope Z-axis     |
 
 ### Window Configuration
 
@@ -91,18 +137,20 @@ The complete dataset contains:
 4 gesture classes
 ```
 
+---
 
 ## Gesture Classification
 
 The system performs four-class gesture recognition.
 
-| Class ID | Gesture |
-|---|---|
-| 0 | circle |
-| 1 | left_right |
-| 2 | rest |
-| 3 | up_down |
+| Class ID | Gesture    |
+| -------- | ---------- |
+| 0        | circle     |
+| 1        | left_right |
+| 2        | rest       |
+| 3        | up_down    |
 
+---
 
 # Study 1 — Neural Network Compression Benchmark
 
@@ -114,57 +162,55 @@ maintaining classification performance.
 
 ## Compared Architectures
 
-- Standard CNN
-- Depthwise CNN
-- FP32 and INT8 deployment formats
+* Standard CNN
+* Depthwise CNN
+* FP32 and INT8 deployment formats
 
 ## Study 1 Results
 
-| Model | Parameters | NN MACs | TFLite Size | Test Accuracy |
-|---|---:|---:|---:|---:|
-| Standard CNN FP32 | 2,660 | 160,320 | 15.121 KB | 100% |
-| Standard CNN INT8 | 2,660 | 160,320 | 9.797 KB | 100% |
-| Depthwise CNN FP32 | 1,330 | 52,544 | 10.824 KB | 100% |
-| Depthwise CNN INT8 | 1,330 | 52,544 | 10.125 KB | 100% |
+| Model              | Parameters | NN MACs | TFLite Size | Test Accuracy |
+| ------------------ | ---------: | ------: | ----------: | ------------: |
+| Standard CNN FP32  |      2,660 | 160,320 |   15.121 KB |          100% |
+| Standard CNN INT8  |      2,660 | 160,320 |    9.797 KB |          100% |
+| Depthwise CNN FP32 |      1,330 |  52,544 |   10.824 KB |          100% |
+| Depthwise CNN INT8 |      1,330 |  52,544 |   10.125 KB |          100% |
 
 The Depthwise CNN reduces the parameter count by approximately
 50% and the neural-network MAC count by approximately 67.2%
 compared with the Standard CNN.
 
-
 ## Neural Network Computational Cost
 
 ![Neural Network MAC Comparison](Figure/study1_mac_count_comparison.png)
-
 
 ## Embedded Arduino Benchmark
 
 ### Standard CNN INT8
 
-| Metric | Value |
-|---|---:|
-| Flash Memory | 194,408 bytes |
-| Tensor Arena | 6,644 bytes |
-| Inference Time | 25.370 ms |
-| Total Processing Time | 26.760 ms |
+| Metric                |         Value |
+| --------------------- | ------------: |
+| Flash Memory          | 194,408 bytes |
+| Tensor Arena          |   6,644 bytes |
+| Inference Time        |     25.370 ms |
+| Total Processing Time |     26.760 ms |
 
 ### Depthwise CNN INT8
 
-| Metric | Value |
-|---|---:|
-| Flash Memory | 205,424 bytes |
-| Tensor Arena | 7,156 bytes |
-| Inference Time | 16.880 ms |
-| Total Processing Time | 18.330 ms |
+| Metric                |         Value |
+| --------------------- | ------------: |
+| Flash Memory          | 205,424 bytes |
+| Tensor Arena          |   7,156 bytes |
+| Inference Time        |     16.880 ms |
+| Total Processing Time |     18.330 ms |
 
 The Depthwise CNN reduces measured inference latency from
 25.370 ms to 16.880 ms.
-
 
 ## Arduino Inference Latency Comparison
 
 ![Arduino Inference Latency](Figure/final_arduino_inference_latency.png)
 
+---
 
 # Study 2 — Feature Engineering Benchmark
 
@@ -197,25 +243,24 @@ Dense(4)
 This controlled comparison isolates the effect of the input
 representation.
 
-
 ## Feature Representation Comparison
 
 | Representation | Input Features | Parameters | Test Accuracy | Macro F1 |
-|---|---:|---:|---:|---:|
-| Raw Signal | 768 | 51,428 | 100% | 1.0000 |
-| RMS | 6 | 2,660 | 100% | 1.0000 |
-| FFT | 48 | 5,348 | 100% | 1.0000 |
-| Spectral | 12 | 3,044 | 96.875% | 0.9686 |
+| -------------- | -------------: | ---------: | ------------: | -------: |
+| Raw Signal     |            768 |     51,428 |          100% |   1.0000 |
+| RMS            |              6 |      2,660 |          100% |   1.0000 |
+| FFT            |             48 |      5,348 |          100% |   1.0000 |
+| Spectral       |             12 |      3,044 |       96.875% |   0.9686 |
 
 RMS achieves the same test accuracy as the raw and FFT
 representations while reducing the input dimensionality from
 768 values to only 6 features.
 
-
 ## Accuracy vs Model Complexity
 
 ![Accuracy vs Model Complexity](Figure/study2_accuracy_vs_parameters.png)
 
+---
 
 # Final Selected Model — RMS Tiny INT8
 
@@ -224,11 +269,10 @@ for the final lightweight embedded implementation.
 
 The final system combines:
 
-- RMS feature extraction
-- Tiny fully-connected neural network
-- INT8 quantization
-- TensorFlow Lite Micro deployment
-
+* RMS feature extraction
+* Tiny fully-connected neural network
+* INT8 quantization
+* TensorFlow Lite Micro deployment
 
 ## RMS Tiny INT8 Architecture
 
@@ -245,56 +289,54 @@ Dense(8)
 Softmax(4)
 ```
 
-
 ## Final Model Characteristics
 
-| Metric | Value |
-|---|---:|
-| Input Features | 6 |
-| Parameters | 284 |
-| NN MACs | 256 |
+| Metric           |    Value |
+| ---------------- | -------: |
+| Input Features   |        6 |
+| Parameters       |      284 |
+| NN MACs          |      256 |
 | FP32 TFLite Size | 3.227 KB |
 | INT8 TFLite Size | 3.414 KB |
-| Test Accuracy | 100% |
-| Macro F1 | 1.0000 |
+| Test Accuracy    |     100% |
+| Macro F1         |   1.0000 |
 
 The 256 MAC value refers only to the neural-network classifier and
 does not include RMS feature extraction.
 
-
 ## RMS Tiny INT8 Arduino Performance
 
-| Metric | Value |
-|---|---:|
-| Arduino Flash | 165,960 bytes |
-| Tensor Arena | 948 bytes |
-| RMS + Preprocessing | 0.181 ms |
-| Neural-Network Inference | 0.165 ms |
-| Total Processing Time | 0.346 ms |
+| Metric                   |         Value |
+| ------------------------ | ------------: |
+| Arduino Flash            | 165,960 bytes |
+| Tensor Arena             |     948 bytes |
+| RMS + Preprocessing      |      0.181 ms |
+| Neural-Network Inference |      0.165 ms |
+| Total Processing Time    |      0.346 ms |
 
 The complete embedded pipeline includes:
 
-- RMS feature extraction
-- Input normalization
-- INT8 neural-network inference
-- Gesture prediction
+* RMS feature extraction
+* Input normalization
+* INT8 neural-network inference
+* Gesture prediction
 
+---
 
 # Final Embedded Model Comparison
 
 The three final INT8 configurations were evaluated on the
 Arduino Nano 33 BLE.
 
-| Model | Representation | Parameters | NN MACs | TFLite Size | Tensor Arena | Inference |
-|---|---|---:|---:|---:|---:|---:|
-| Standard CNN INT8 | Raw Signal | 2,660 | 160,320 | 9.797 KB | 6,644 B | 25.370 ms |
-| Depthwise CNN INT8 | Raw Signal | 1,330 | 52,544 | 10.125 KB | 7,156 B | 16.880 ms |
-| **RMS Tiny INT8** | RMS Features | **284** | **256** | **3.414 KB** | **948 B** | **0.165 ms** |
+| Model              | Representation | Parameters | NN MACs |  TFLite Size | Tensor Arena |    Inference |
+| ------------------ | -------------- | ---------: | ------: | -----------: | -----------: | -----------: |
+| Standard CNN INT8  | Raw Signal     |      2,660 | 160,320 |     9.797 KB |      6,644 B |    25.370 ms |
+| Depthwise CNN INT8 | Raw Signal     |      1,330 |  52,544 |    10.125 KB |      7,156 B |    16.880 ms |
+| **RMS Tiny INT8**  | RMS Features   |    **284** | **256** | **3.414 KB** |    **948 B** | **0.165 ms** |
 
 RMS Tiny INT8 provides the lowest computational complexity,
 Tensor Arena requirement, model size, and measured inference
 latency among the evaluated final models.
-
 
 ## Final Deployment Figures
 
@@ -306,6 +348,7 @@ latency among the evaluated final models.
 
 ![Arduino Inference Latency](Figure/final_arduino_inference_latency.png)
 
+---
 
 # Deployment Files
 
@@ -330,6 +373,7 @@ The model headers contain the synchronized final TFLite models,
 while the scaler headers contain the normalization parameters used
 during deployment.
 
+---
 
 # Results
 
@@ -351,6 +395,7 @@ The final synchronized artifact versions are documented in:
 
 [Results/final_artifacts.md](Results/final_artifacts.md)
 
+---
 
 # Reproducing the Experiments
 
@@ -380,17 +425,17 @@ Jupyter environment.
 
 The notebook reproduces:
 
-- Dataset loading and preprocessing
-- Train/validation/test splitting
-- Standard CNN training
-- Depthwise CNN training
-- INT8 quantization
-- Raw/RMS/FFT/Spectral feature comparison
-- RMS Tiny optimization
-- Robustness checks
-- MAC and model-size analysis
-- Final result tables and figures
-- Deployment model exports
+* Dataset loading and preprocessing
+* Train/validation/test splitting
+* Standard CNN training
+* Depthwise CNN training
+* INT8 quantization
+* Raw/RMS/FFT/Spectral feature comparison
+* RMS Tiny optimization
+* Robustness checks
+* MAC and model-size analysis
+* Final result tables and figures
+* Deployment model exports
 
 The final synchronized run uses:
 
@@ -401,21 +446,24 @@ Random seed: 42
 
 Normalization statistics are computed using the training set only.
 
+---
 
 # Limitations and Future Work
 
-### Limitations
+## Limitations
 
-- The dataset currently has limited user and recording diversity.
-- Power and energy consumption were not directly measured.
+* The dataset currently has limited user and recording diversity.
+* Power and energy consumption were not directly measured.
 
-### Future Work
+## Future Work
 
-- Collect a larger multi-user and multi-session dataset.
-- Perform standardized real-time evaluation for all models.
-- Measure power consumption and energy per inference.
-- Investigate additional compression methods such as pruning or neural architecture search.
+* Collect a larger multi-user and multi-session dataset.
+* Perform standardized real-time evaluation for all models.
+* Measure power consumption and energy per inference.
+* Investigate additional compression methods such as pruning or
+  neural architecture search.
 
+---
 
 # Repository Structure
 
@@ -447,6 +495,7 @@ TinyML-Compression-Benchmark/
 └── README.md
 ```
 
+---
 
 # Conclusion
 
@@ -456,12 +505,12 @@ through both neural-network optimization and feature engineering.
 The final RMS Tiny INT8 model achieves 100% accuracy on the current
 test set using:
 
-- 284 parameters
-- 256 neural-network MAC operations
-- 3.414 KB TFLite model size
-- 948 bytes Tensor Arena
-- 0.165 ms Arduino inference latency
-- 0.346 ms total processing time
+* 284 parameters
+* 256 neural-network MAC operations
+* 3.414 KB TFLite model size
+* 948 bytes Tensor Arena
+* 0.165 ms Arduino inference latency
+* 0.346 ms total processing time
 
 Compared with the evaluated CNN architectures, RMS Tiny INT8
 provides a substantially lighter embedded solution while preserving
